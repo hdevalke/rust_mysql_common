@@ -10,8 +10,8 @@ This crate is an implementation of basic MySql protocol primitives.
 
 This crate:
 * defines basic MySql constants;
-* implements necessary functionality for MySql `cached_sha2_password` and
-  `mysql_native_password` authentication plugins;
+* implements necessary functionality for MySql `cached_sha2_password`,
+  `mysql_native_password` and `mysql_clear_password` authentication plugins;
 * implements helper traits for MySql protocol IO;
 * implements support of named parameters for prepared statements;
 * implements parsers for a subset of MySql protocol packets;

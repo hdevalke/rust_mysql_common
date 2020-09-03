@@ -700,6 +700,7 @@ impl<'a> LocalInfilePacket<'a> {
 
 const MYSQL_NATIVE_PASSWORD_PLUGIN_NAME: &[u8] = b"mysql_native_password";
 const CACHING_SHA2_PASSWORD_PLUGIN_NAME: &[u8] = b"caching_sha2_password";
+const MYSQL_CLEAR_PASSWORD_PLUGIN_NAME: &[u8] = b"mysql_clear_password";
 
 /// Authentication plugin
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -708,6 +709,10 @@ pub enum AuthPlugin<'a> {
     MysqlNativePassword,
     /// Default since MySql v8.0.4
     CachingSha2Password,
+    /// Mysql Clear Password plugin.
+    /// Can be used on the client side in concert with any server-side plugin that needs a cleartext password.
+    /// Examples are the PAM and simple LDAP authentication plugins.
+    MysqlClearPassword,
     Other(Cow<'a, [u8]>),
 }
 
@@ -716,6 +721,7 @@ impl<'a> AuthPlugin<'a> {
         match name {
             CACHING_SHA2_PASSWORD_PLUGIN_NAME => AuthPlugin::CachingSha2Password,
             MYSQL_NATIVE_PASSWORD_PLUGIN_NAME => AuthPlugin::MysqlNativePassword,
+            MYSQL_CLEAR_PASSWORD_PLUGIN_NAME => AuthPlugin::MysqlClearPassword,
             name => AuthPlugin::Other(name.into()),
         }
     }
@@ -724,6 +730,7 @@ impl<'a> AuthPlugin<'a> {
         match self {
             AuthPlugin::MysqlNativePassword => MYSQL_NATIVE_PASSWORD_PLUGIN_NAME,
             AuthPlugin::CachingSha2Password => CACHING_SHA2_PASSWORD_PLUGIN_NAME,
+            AuthPlugin::MysqlClearPassword => MYSQL_CLEAR_PASSWORD_PLUGIN_NAME,
             AuthPlugin::Other(name) => &*name,
         }
     }
@@ -732,6 +739,7 @@ impl<'a> AuthPlugin<'a> {
         match self {
             AuthPlugin::CachingSha2Password => AuthPlugin::CachingSha2Password,
             AuthPlugin::MysqlNativePassword => AuthPlugin::MysqlNativePassword,
+            AuthPlugin::MysqlClearPassword =>AuthPlugin::MysqlClearPassword,
             AuthPlugin::Other(name) => AuthPlugin::Other(name.into_owned().into()),
         }
     }
@@ -749,6 +757,9 @@ impl<'a> AuthPlugin<'a> {
                 }
                 AuthPlugin::MysqlNativePassword => {
                     scramble_native(nonce, pass.as_bytes()).map(|x| Vec::from(&x[..]))
+                }
+                AuthPlugin::MysqlClearPassword => {
+                    Some(pass.as_bytes().to_vec())
                 }
                 AuthPlugin::Other(_) => None,
             },
